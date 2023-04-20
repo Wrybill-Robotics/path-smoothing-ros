@@ -48,15 +48,17 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "demo_generator");
     ros::NodeHandle nh("~");
     ros::Publisher PosePub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/waypoint", 1, true);
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(20);
+    ros::Rate waiter(1);
     geometry_msgs::PoseWithCovarianceStamped pose;
     pose.header.frame_id = "map";
     while(ros::ok())
     {
+      waiter.sleep();
         int i,j;
-      for (i=-5; i<=5; i++)
+      for (i=0; i<=5; i++)
       {
-        for (j=-5; j<=5; j++)
+        for (j=0; j<=5; j++)
         {
             pose.pose.pose.position.x=j;
             pose.pose.pose.position.y=i;
@@ -69,7 +71,7 @@ int main(int argc, char** argv)
             loop_rate.sleep();
         }
         i=i+1;
-        for (j=5; j>=-5; j--)
+        for (j=5; j>=0; j--)
         {
             pose.pose.pose.position.x=j;
             pose.pose.pose.position.y=i;

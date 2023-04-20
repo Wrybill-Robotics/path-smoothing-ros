@@ -96,8 +96,13 @@ int main(int argc, char** argv)
 
   // int pointsPerUnit, skipPoints;
   // bool useEndConditions, useMiddleConditions;
+ros::Rate rate(100);
+while(ros::ok())
+{
+  ros::spinOnce();
+  rate.sleep();
+  // ros::spin();
 
-
-  ros::spin();
-  return 0;
+}
+return 0;
 }

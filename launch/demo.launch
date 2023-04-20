@@ -1,20 +1,22 @@
 <launch>
 
-  <arg name="rviz" default="true" />
+  <arg name="rviz" default="false" />
 
   <group if="$(arg rviz)">
     <include file="$(find path_smoothing_ros)/launch/rviz.launch" />
   </group>
 
   <node name="path_smoothing_demo" pkg="path_smoothing_ros" type="path_smoother" output="screen">
-    <param name="points_per_unit" value="100"/>
+    <param name="points_per_unit" value="10"/>
     <param name="skip_points" value="0"/>
     <param name="use_end_conditions" value="true"/>
     <param name="use_middle_conditions" value="true"/>
+    <remap from="waypoint" to="initialpose"/>
+
    
     <!-- input -->
     <!-- <remap from="/waypoint" to="/initialpose"/> -->
   </node>
-  <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/>
+  <!-- <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/> -->
 
 </launch>
