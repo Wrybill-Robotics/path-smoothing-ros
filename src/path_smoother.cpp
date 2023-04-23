@@ -48,7 +48,7 @@ nav_msgs::Path path, smoothedPath;
 
 double pointsPerUnit;
 int skipPoints;
-bool useEndConditions,useMiddleConditions; 
+bool useEndConditions,useMiddleConditions,path_input; 
 
 void path_from_pose_generator_callback(const geometry_msgs::PoseWithCovarianceStamped wp)
 {
@@ -77,10 +77,11 @@ void path_from_path_generator_callback(const nav_msgs::Path inputpath)
   if(inputpath.poses.size() >1)
   {
     //creat object csi
+    smoothedPath.header.frame_id = inputpath.header.frame_id;
     path_smoothing::CubicSplineInterpolator csi(pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
     csi.interpolatePath(inputpath, smoothedPath);
-    initialPosePub.publish(path.poses.front());
-    finalPosePub.publish(smoothedpath.poses.back());
+    initialPosePub.publish(smoothedPath.poses.front());
+    finalPosePub.publish(smoothedPath.poses.back());
     smoothedPathPub.publish(smoothedPath);
   }
 }
@@ -99,14 +100,15 @@ int main(int argc, char** argv)
 
   initialPosePub = nh.advertise<geometry_msgs::PoseStamped>("initial_pose", 1, true);
   finalPosePub = nh.advertise<geometry_msgs::PoseStamped>("final_pose", 1, true);
-  pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
   smoothedPathPub = nh.advertise<nav_msgs::Path>("smoothed_path", 1, true);
 
-  if !path_input{
-    waypoint_sub = nh.subscribe("/waypoint", 10, path_from_pose_generator_callback);
+  if (!path_input){
+    waypoint_sub = nh.subscribe("/input", 10, path_from_pose_generator_callback);
+    pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
+
   }
   else{
-    path_sub = nh.subscribe("/path_input", 10, path_from_path_generator_callback);
+    path_sub = nh.subscribe("/input", 10, path_from_path_generator_callback);
   }
 
   // int pointsPerUnit, skipPoints;
