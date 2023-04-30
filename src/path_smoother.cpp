@@ -78,7 +78,6 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "path_smoothing");
   ros::NodeHandle nh;
-  //ROS_INFO_STREAM("Namespace:" << nh.getNamespace());
   nh.param<double>("points_per_unit", pointsPerUnit, 5.0);
   nh.param<int>("skip_points", skipPoints, 0);
   nh.param<bool>("use_end_conditions", useEndConditions, false);
@@ -95,8 +94,6 @@ while(ros::ok())
 {
   ros::spinOnce();
   rate.sleep();
-  // ros::spin();
-
 }
 return 0;
 }
