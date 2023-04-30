@@ -32,44 +32,28 @@
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 *
-* Author:  George Kouros
+* Author:  Heath Ascott-Evans
 *********************************************************************/
-
+/* Generate a smooth path from inear path
+TODO service for path reset/reload
+*/
+#include <ros/ros.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 #include "path_smoothing_ros/cubic_spline_interpolator.h"
 #include <tf/tf.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 
-ros::Publisher initialPosePub,finalPosePub,pathPub,smoothedPathPub;
-ros::Subscriber waypoint_sub, path_sub;
+ros::Publisher initialPosePub,finalPosePub,smoothedPathPub;
+ros::Subscriber path_sub;
 
 geometry_msgs::PoseStamped pose;
 nav_msgs::Path path, smoothedPath;
 
+//spline interpolator variables
 double pointsPerUnit;
 int skipPoints;
 bool useEndConditions,useMiddleConditions,path_input; 
-
-void path_from_pose_generator_callback(const geometry_msgs::PoseWithCovarianceStamped wp)
-{
-  path.header.frame_id = "map";
-  pose.header.frame_id = "map";
-  pose.pose.position=wp.pose.pose.position;
-  pose.pose.orientation = wp.pose.pose.orientation;
-  path.poses.push_back(pose);
-  // create a cubic spline interpolator if path >1 point
-  if(path.poses.size() >1)
-  {
-    path_smoothing::CubicSplineInterpolator csi(pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
-
-      // pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
-    csi.interpolatePath(path, smoothedPath);
-    finalPosePub.publish(path.poses.back());
-    pathPub.publish(path);
-    smoothedPathPub.publish(smoothedPath);
-  }
-  initialPosePub.publish(path.poses.front());
-}
 
 void path_from_path_generator_callback(const nav_msgs::Path inputpath)
 {
@@ -84,36 +68,29 @@ void path_from_path_generator_callback(const nav_msgs::Path inputpath)
     finalPosePub.publish(smoothedPath.poses.back());
     smoothedPathPub.publish(smoothedPath);
   }
+  else
+  {
+    ROS_INFO_STREAM("Path does not have enough points");
+  }
 }
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "path_smoothing_ros_wrapper");
-  ros::NodeHandle nh("~");
+  ros::init(argc, argv, "path_smoothing");
+  ros::NodeHandle nh;
   //ROS_INFO_STREAM("Namespace:" << nh.getNamespace());
   nh.param<double>("points_per_unit", pointsPerUnit, 5.0);
   nh.param<int>("skip_points", skipPoints, 0);
   nh.param<bool>("use_end_conditions", useEndConditions, false);
   nh.param<bool>("use_middle_conditions", useMiddleConditions, false);
-  nh.param<bool>("path_input", path_input, false);
-
 
   initialPosePub = nh.advertise<geometry_msgs::PoseStamped>("initial_pose", 1, true);
   finalPosePub = nh.advertise<geometry_msgs::PoseStamped>("final_pose", 1, true);
   smoothedPathPub = nh.advertise<nav_msgs::Path>("smoothed_path", 1, true);
 
-  if (!path_input){
-    waypoint_sub = nh.subscribe("/input", 10, path_from_pose_generator_callback);
-    pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
+  path_sub = nh.subscribe("/initial_path", 10, path_from_path_generator_callback);
 
-  }
-  else{
-    path_sub = nh.subscribe("/input", 10, path_from_path_generator_callback);
-  }
-
-  // int pointsPerUnit, skipPoints;
-  // bool useEndConditions, useMiddleConditions;
-ros::Rate rate(100);
+ros::Rate rate(10);
 while(ros::ok())
 {
   ros::spinOnce();
