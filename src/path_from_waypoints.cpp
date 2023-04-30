@@ -36,12 +36,16 @@
 *********************************************************************/
 /* 
   Generate a path from waypoints
+  TODO service to reset/remove point
 */
+#include <ros/ros.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
 #include <tf/tf.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 
-ros::Publisher pathPub,;
+ros::Publisher pathPub;
 ros::Subscriber waypoint_sub, path_sub;
 
 geometry_msgs::PoseStamped pose;
