@@ -12,14 +12,12 @@ A cubic spline interpolator for path smoothing. Compatible with ROS.
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware for robotics),
 
-	sudo rosdep install --from-paths src
-
 #### Building
 
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
 	cd catkin_workspace/src
-	git clone git@github.com:Wrybill-Robotics/path-smoothing-ros.git
+	git clone git@github.com:Wrybill-Robotics/path_smoothing_ros.git
 	cd ../
 	rosdep install --from-paths . --ignore-src
 	catkin_make
