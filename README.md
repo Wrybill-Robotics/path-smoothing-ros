@@ -1,4 +1,4 @@
-# path-smoothing-ros
+# path_smoothing_ros
 ## Overview
 A cubic spline interpolator for path smoothing. Compatible with ROS.
 
@@ -27,33 +27,50 @@ To build from source, clone the latest version from this repository into your ca
 ## Launch files
 
 * **path_smoothing.launch:**  generates a smooth path from input waypoints
+* **marker_path.launch:**  generates a smooth path from input visualization markers
 
-## Nodes
+# Nodes
 
-### path_from_waypoints
+## path_from_waypoints
 
     Loads a geometry_msgs/PoseWithCovarianceStamped and appends to path.
 
-#### Subscribed Topics
+### Subscribed Topics
 
 * **`/input`** ([geometry_msgs/PoseWithCovarianceStamped])
     input topic to generate path points
-#### Published Topics
+### Published Topics
 * **`/initial_path`** ([nav_msgs/Path])
     simple straight line path between input poses    
-#### Parameters
+### Parameters
+    N/A
 
 
-### path_smoother
+## path_from_markers
+
+    Loads a list of Points from visualization_msg/Marker, calculates the centre points between markers, appends to Path.
+
+### Subscribed Topics
+
+* **`/marker`** ([visualization_msg/Marker])
+    input topic to generate path points
+### Published Topics
+* **`/initial_path`** ([nav_msgs/Path])
+    simple straight line path between input poses    
+### Parameters
+    N/A
+
+
+## path_smoother
 
     Loads a nav_msgs/Path and performes cubic spline interpolation to smooth the path
 
-#### Subscribed Topics
+### Subscribed Topics
 
 * **`/initial_path`** ([nav_msgs/Path])
     Simple straight line path to perform smoothing in
 
-#### Published Topics
+### Published Topics
 * **`/smoothed_path`** ([nav_msgs/Path])
     Smoothed path
 
@@ -62,7 +79,7 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`/final_pose`** ([geometry_msgs/PoseStamped])
     pose for end of smoothed path
-#### Parameters
+### Parameters
 * **`points_per_unit`** ([Double])
     number of points to generate between input points
 * **`skip_points`** ([Int])
