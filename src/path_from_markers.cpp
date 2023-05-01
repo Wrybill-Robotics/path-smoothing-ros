@@ -38,22 +38,19 @@
 Generate a smooth path between a set of markers
 
 */
-#include "path_smoothing_ros/cubic_spline_interpolator.h"
-#include <tf/tf.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <ros/ros.h>
+#include <nav_msgs/Path.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <std_msgs::Bool.h>
-ros::Publisher initialPosePub,finalPosePub,pathPub,smoothedPathPub;
-ros::Subscriber markers_sub, generate_path_sub;
+#include <visualization_msgs/Marker.h>
+#include <std_msgs/Bool.h>
+#include <tf/tf.h>
+ros::Publisher pathPub;
+ros::Subscriber marker_sub, generate_path_sub;
 
 geometry_msgs::PoseStamped pose;
-nav_msgs::Path path, smoothedPath;
-visualization_msgs::MarkerArray markers
-double pointsPerUnit;
-int skipPoints;
-bool useEndConditions,useMiddleConditions,path_input; 
+nav_msgs::Path path;
+//visualization_msgs::Marker marker;
 
 geometry_msgs::Point mid_point_calc (geometry_msgs::Point left, geometry_msgs::Point right)
 {
@@ -61,74 +58,116 @@ geometry_msgs::Point mid_point_calc (geometry_msgs::Point left, geometry_msgs::P
   mid_point.x = (left.x+right.x)/2;
   mid_point.y = (left.y+right.y)/2;
   mid_point.z = 0;
-  return mid_point
+  return mid_point;
 }
-void markers_callback(visualization_msgs::MarkerArray marker_input) //marker_array load to global variable
+
+geometry_msgs::Quaternion heading_calc(geometry_msgs::Point old_point, geometry_msgs::Point new_point)
 {
-    markers.markers = marker_input.markers;
+  float delta_x,delta_y,yaw;
+  delta_x=new_point.x-old_point.x;
+  delta_y=new_point.y-old_point.y;
+  yaw=atan2(delta_y,delta_x);
+
+  tf::Matrix3x3 rot_euler;
+  tf::Quaternion rot_quat;
+
+  rot_euler.setEulerYPR(yaw, 0.0, 0.0);
+  rot_euler.getRotation(rot_quat);
+  rot_quat.normalize();
+
+  geometry_msgs::Quaternion heading_q;
+  heading_q.x = rot_quat.getX();
+  heading_q.y = rot_quat.getY();
+  heading_q.z = rot_quat.getZ();
+  heading_q.w = rot_quat.getW();
+  return heading_q;
 }
 
-// make a service
-void generate_path(std_msgs::Bool data)
+void marker_callback(visualization_msgs::Marker marker) //marker_array load to global variable TODO make a class with data
 {
-    if (data.data)    //iterate marker_array odds = left evens = right
-    {
-        for (i=0 ; i <= markers.markers.size(); i++) //needs to iterate by 2's
-        {
-            geometry_msgs::Point left, right, mid;
-            right.x = markers[i].markers.pose.position.x
-            right.y = markers[i].markers.pose.position.y
-            left.x = markers[i+1].markers.pose.position.x
-            left.y = markers[i+1].markers.pose.position.y
-            mid = mid_point_calc(left,right);     //mid_point calc -> mid_path
+    //marker = marker_input;
+    geometry_msgs::Point left, right, mid, mid_prev;
+      // Specify heading goal using current goal and next goal (final goal orientation straight line from starting point of goal)
+      mid_prev.x=0.0;
+      mid_prev.y=0.0;
+      path.header.frame_id = "map"; //use wp frame_id ?
+      pose.header.frame_id = "map"; //use wp frame_id?
 
-            path.poses.push_back(mid);
-        }
-            //mid_path -> smoothed path
-
-    }
+      for (int i=0 ; i <= marker.points.size()-1; i++) //iterate through array finding midpoint between points
+      {
+        
+          //geometry_msgs::Point left, right, mid;
+          // left.x = marker.marker[i].pose.position.x;
+          // left.y = marker.marker[i].pose.position.y;
+          // right.x = marker.marker[i+1].pose.position.x;
+          // right.y = marker.marker[i+1].pose.position.y;
+          left=marker.points[i];
+          right=marker.points[i+1];
+          //mid_point calc -> mid_path
+          mid = mid_point_calc(left,right);
+          pose.pose.position=mid;
+          //calculate heading based on previous pose
+          pose.pose.orientation = heading_calc(mid_prev,mid);
+          mid_prev=mid;
+          path.poses.push_back(pose);
+      }
+      pathPub.publish(path);
 }
 
-void path_from_path_generator_callback(const nav_msgs::Path inputpath)
-{
-  // create a cubic spline interpolator if path >1 point
-  if(inputpath.poses.size() >1)
-  {
-    //creat object csi
-    smoothedPath.header.frame_id = inputpath.header.frame_id;
-    path_smoothing::CubicSplineInterpolator csi(pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
-    csi.interpolatePath(inputpath, smoothedPath);
-    initialPosePub.publish(smoothedPath.poses.front());
-    finalPosePub.publish(smoothedPath.poses.back());
-    smoothedPathPub.publish(smoothedPath);
-  }
-}
+
+// TODO make as service
+// void generate_path_callback(std_msgs::Bool data)
+// {
+//     if (data.data)    //iterate marker_array assume zigzag
+//     {            
+//       geometry_msgs::Point left, right, mid, mid_prev;
+//       // Specify heading goal using current goal and next goal (final goal orientation straight line from starting point of goal)
+//       mid_prev.x=0.0;
+//       mid_prev.y=0.0;
+//       path.header.frame_id = "map"; //use wp frame_id ?
+//       pose.header.frame_id = "map"; //use wp frame_id?
+
+//       for (int i=0 ; i <= marker.points.size()-1; i++) //iterate through array finding midpoint between points
+//       {
+        
+//           //geometry_msgs::Point left, right, mid;
+//           // left.x = marker.marker[i].pose.position.x;
+//           // left.y = marker.marker[i].pose.position.y;
+//           // right.x = marker.marker[i+1].pose.position.x;
+//           // right.y = marker.marker[i+1].pose.position.y;
+//           left=marker.points[i];
+//           right=marker.points[i+1];
+//           //mid_point calc -> mid_path
+//           mid = mid_point_calc(left,right);
+//           pose.pose.position=mid;
+//           //calculate heading based on previous pose
+//           pose.pose.orientation = heading_calc(mid_prev,mid);
+//           mid_prev=mid;
+//           path.poses.push_back(pose);
+//       }
+//       pathPub.publish(path);
+//     }
+// }
+
+
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "path_smoothing_ros_wrapper");
-  ros::NodeHandle nh("~");
-  //ROS_INFO_STREAM("Namespace:" << nh.getNamespace());
-  nh.param<double>("points_per_unit", pointsPerUnit, 5.0);
-  nh.param<int>("skip_points", skipPoints, 0);
-  nh.param<bool>("use_end_conditions", useEndConditions, false);
-  nh.param<bool>("use_middle_conditions", useMiddleConditions, false);
+  ros::NodeHandle nh;
+  // subscribers
+  marker_sub = nh.subscribe("/marker" , 10, marker_callback);
+  // generate_path_sub = nh.subscribe("/generate_path", 10, generate_path_callback);
+  // publishers
+  pathPub = nh.advertise<nav_msgs::Path>("/initial_path", 1, true);
 
+  //loop
+  ros::Rate rate(10);
+    while(ros::ok())
+    {
+      ros::spinOnce();
+      rate.sleep();
 
-  initialPosePub = nh.advertise<geometry_msgs::PoseStamped>("initial_pose", 1, true);
-  finalPosePub = nh.advertise<geometry_msgs::PoseStamped>("final_pose", 1, true);
-  smoothedPathPub = nh.advertise<nav_msgs::Path>("smoothed_path", 1, true);
-
-  markers_sub = nh.subscribe("/marker_array" , 10, markers_callback);
-  generate_path_sub = nh.subscribe("/generate_path", 10, generate_path_callback);
-
-ros::Rate rate(100);
-while(ros::ok())
-{
-  ros::spinOnce();
-  rate.sleep();
-  // ros::spin();
-
-}
-return 0;
+    }
+    return 0;
 }
