@@ -61,7 +61,7 @@ geometry_msgs::Point mid_point_calc (geometry_msgs::Point left, geometry_msgs::P
   mid_point.x = (left.x+right.x)/2;
   mid_point.y = (left.y+right.y)/2;
   mid_point.z = 0;
-  ROS_INFO("Point: [%f]:[%f]",mid_point.x,mid_point.y);
+  // ROS_INFO("Point: [%f]:[%f]",mid_point.x,mid_point.y);
   return mid_point;
 }
 
@@ -93,6 +93,22 @@ void marker_callback(visualization_msgs::Marker marker_input) //marker_array loa
 
 }
 
+float path_length(nav_msgs::Path path)
+{
+  float path_length=0.0;
+  float x_0,x_1,y_0,y_1=0.0;
+  for (int i=0 ;i <=path.poses.size()-2 ;i++)
+    {
+      x_0=path.poses[i].pose.position.x;
+      y_0=path.poses[i].pose.position.y;
+      x_1=path.poses[i+1].pose.position.x;
+      y_1=path.poses[i+1].pose.position.y;
+      path_length=path_length+sqrt(pow((x_1-x_0),2)+pow((y_1-y_0),2));
+      // ROS_INFO("%f",path_length);
+    }
+  return path_length;
+}
+
 
 bool generate_path_callback(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
 {
@@ -109,12 +125,6 @@ bool generate_path_callback(std_srvs::Trigger::Request &req,std_srvs::Trigger::R
 
       for (int i=0 ; i <= (marker.points.size()-2); i++) //iterate through array finding midpoint between points
       {
-        
-          //geometry_msgs::Point left, right, mid;
-          // left.x = marker.marker[i].pose.position.x;
-          // left.y = marker.marker[i].pose.position.y;
-          // right.x = marker.marker[i+1].pose.position.x;
-          // right.y = marker.marker[i+1].pose.position.y;
           left=marker.points[i];
           right=marker.points[i+1];
           //mid_point calc -> mid_path
@@ -126,8 +136,9 @@ bool generate_path_callback(std_srvs::Trigger::Request &req,std_srvs::Trigger::R
           path.poses.push_back(pose);
       }
       pathPub.publish(path);
+      float length=path_length(path);
       res.success=true;
-      res.message="Path Generated";
+      res.message="Path Generated, Length:"+std::to_string(length)+"m";
       return true;
       //req.success=true;
       //req.message="Path Generated";
