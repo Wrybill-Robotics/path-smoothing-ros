@@ -43,13 +43,32 @@
 #include <nav_msgs/Path.h>
 #include <tf/tf.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
+#include <std_srvs/Trigger.h>
 
 ros::Publisher pathPub;
 ros::Subscriber waypoint_sub, path_sub;
 
 geometry_msgs::PoseStamped pose;
 nav_msgs::Path path;
+
+bool reset_path(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
+{
+  if (!path.poses.empty())
+    {
+      path.poses.clear();
+      res.success=true;
+      res.message="path emptied";
+      pathPub.publish(path);
+
+      return true;
+    }
+  else
+    {
+      res.success=false;
+      res.message="Path Already Empty";
+      return true;
+    }
+}
 
 void path_from_pose_generator_callback(const geometry_msgs::PoseWithCovarianceStamped wp)
 {
@@ -69,6 +88,7 @@ int main(int argc, char** argv)
 
   waypoint_sub = nh.subscribe("/input", 10, path_from_pose_generator_callback);
   pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
+  ros::ServiceServer server = nh.advertiseService("reset_path", &reset_path);
 
   ros::Rate rate(10);
   while(ros::ok())
