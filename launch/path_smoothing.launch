@@ -9,7 +9,7 @@
   <!-- waypoints to simple path -->
   <node name="path_from_points" pkg="path_smoothing_ros" type="path_from_waypoints" output="screen">
     <!-- sub -->
-    <remap from="/input" to="/input"/>
+    <remap from="/input" to="/waypoint"/>
     <!-- pub -->
     <remap from="/initial_path" to="/initial_path"/>
 
@@ -28,8 +28,7 @@
     <remap from="/smoothed_path" to="/smoothed_path"/>
   </node>
 
-  <!-- <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/> -->
-    <node name="publish_path" pkg="rostopic" type="rostopic" args="pub --latch /initial_path nav_msgs/Path --file=$(find tracking_pid)/trajectories/coverage_with_orientation.yaml"/>
+  <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/>
 
 
 </launch>
