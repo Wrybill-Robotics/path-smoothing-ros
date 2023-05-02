@@ -44,13 +44,16 @@ Generate a smooth path between a set of markers
 #include <geometry_msgs/Point.h>
 #include <visualization_msgs/Marker.h>
 #include <std_msgs/Bool.h>
+
+#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 #include <tf/tf.h>
 ros::Publisher pathPub;
 ros::Subscriber marker_sub, generate_path_sub;
 
 geometry_msgs::PoseStamped pose;
-nav_msgs::Path path;
-//visualization_msgs::Marker marker;
+// nav_msgs::Path path;
+visualization_msgs::Marker marker;
 
 geometry_msgs::Point mid_point_calc (geometry_msgs::Point left, geometry_msgs::Point right)
 {
@@ -58,6 +61,7 @@ geometry_msgs::Point mid_point_calc (geometry_msgs::Point left, geometry_msgs::P
   mid_point.x = (left.x+right.x)/2;
   mid_point.y = (left.y+right.y)/2;
   mid_point.z = 0;
+  ROS_INFO("Point: [%f]:[%f]",mid_point.x,mid_point.y);
   return mid_point;
 }
 
@@ -83,17 +87,27 @@ geometry_msgs::Quaternion heading_calc(geometry_msgs::Point old_point, geometry_
   return heading_q;
 }
 
-void marker_callback(visualization_msgs::Marker marker) //marker_array load to global variable TODO make a class with data
+void marker_callback(visualization_msgs::Marker marker_input) //marker_array load to global variable TODO make a class with data
 {
-    //marker = marker_input;
-    geometry_msgs::Point left, right, mid, mid_prev;
+    marker = marker_input;
+
+}
+
+
+bool generate_path_callback(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
+{
+    //if (req)    //iterate marker_array assume zigzag
+    {        
+      nav_msgs::Path path;
+    
+      geometry_msgs::Point left, right, mid, mid_prev;
       // Specify heading goal using current goal and next goal (final goal orientation straight line from starting point of goal)
-      mid_prev.x=0.0;
+      mid_prev.x=0.0; //lookup robot pose in map frame
       mid_prev.y=0.0;
       path.header.frame_id = "map"; //use wp frame_id ?
       pose.header.frame_id = "map"; //use wp frame_id?
 
-      for (int i=0 ; i <= marker.points.size()-1; i++) //iterate through array finding midpoint between points
+      for (int i=0 ; i <= (marker.points.size()-2); i++) //iterate through array finding midpoint between points
       {
         
           //geometry_msgs::Point left, right, mid;
@@ -112,49 +126,21 @@ void marker_callback(visualization_msgs::Marker marker) //marker_array load to g
           path.poses.push_back(pose);
       }
       pathPub.publish(path);
+      res.success=true;
+      res.message="Path Generated";
+      return true;
+      //req.success=true;
+      //req.message="Path Generated";
 }
-
-
-// TODO make as service
-// void generate_path_callback(std_msgs::Bool data)
-// {
-//     if (data.data)    //iterate marker_array assume zigzag
-//     {            
-//       geometry_msgs::Point left, right, mid, mid_prev;
-//       // Specify heading goal using current goal and next goal (final goal orientation straight line from starting point of goal)
-//       mid_prev.x=0.0;
-//       mid_prev.y=0.0;
-//       path.header.frame_id = "map"; //use wp frame_id ?
-//       pose.header.frame_id = "map"; //use wp frame_id?
-
-//       for (int i=0 ; i <= marker.points.size()-1; i++) //iterate through array finding midpoint between points
-//       {
-        
-//           //geometry_msgs::Point left, right, mid;
-//           // left.x = marker.marker[i].pose.position.x;
-//           // left.y = marker.marker[i].pose.position.y;
-//           // right.x = marker.marker[i+1].pose.position.x;
-//           // right.y = marker.marker[i+1].pose.position.y;
-//           left=marker.points[i];
-//           right=marker.points[i+1];
-//           //mid_point calc -> mid_path
-//           mid = mid_point_calc(left,right);
-//           pose.pose.position=mid;
-//           //calculate heading based on previous pose
-//           pose.pose.orientation = heading_calc(mid_prev,mid);
-//           mid_prev=mid;
-//           path.poses.push_back(pose);
-//       }
-//       pathPub.publish(path);
-//     }
-// }
-
+}
 
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "path_smoothing_ros_wrapper");
   ros::NodeHandle nh;
+    //service
+  ros::ServiceServer server = nh.advertiseService("generate_path", &generate_path_callback);
   // subscribers
   marker_sub = nh.subscribe("/marker" , 10, marker_callback);
   // generate_path_sub = nh.subscribe("/generate_path", 10, generate_path_callback);
@@ -162,7 +148,7 @@ int main(int argc, char** argv)
   pathPub = nh.advertise<nav_msgs::Path>("/initial_path", 1, true);
 
   //loop
-  ros::Rate rate(10);
+  ros::Rate rate(1);
     while(ros::ok())
     {
       ros::spinOnce();
