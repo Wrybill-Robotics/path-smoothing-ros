@@ -29,11 +29,14 @@ add_executable(path_smoother src/path_smoother.cpp)
 add_executable(demo_generator src/demo_generator.cpp)
 add_executable(path_from_waypoints src/path_from_waypoints.cpp)
 add_executable(path_from_markers src/path_from_markers.cpp)
+add_executable(marker_demo src/marker_demo.cpp)
+
 
 target_link_libraries(demo ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(path_smoother ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(demo_generator ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(path_from_waypoints ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(path_from_markers ${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(marker_demo ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
