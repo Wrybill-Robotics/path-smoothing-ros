@@ -42,36 +42,43 @@ TODO service for path reset/reload
 #include <nav_msgs/Path.h>
 #include "path_smoothing_ros/cubic_spline_interpolator.h"
 #include <tf/tf.h>
+#include <std_srvs/Trigger.h>
 
 
 ros::Publisher initialPosePub,finalPosePub,smoothedPathPub;
 ros::Subscriber path_sub;
 
 geometry_msgs::PoseStamped pose;
-nav_msgs::Path path, smoothedPath;
+nav_msgs::Path path;
 
 //spline interpolator variables
 double pointsPerUnit;
 int skipPoints;
 bool useEndConditions,useMiddleConditions,path_input; 
 
+
+
 void path_from_path_generator_callback(const nav_msgs::Path inputpath)
 {
   // create a cubic spline interpolator if path >1 point
+  nav_msgs::Path smoothedPath;
+  smoothedPath.header.frame_id = inputpath.header.frame_id;
   if(inputpath.poses.size() >1)
   {
     //creat object csi
-    smoothedPath.header.frame_id = inputpath.header.frame_id;
+
+
     path_smoothing::CubicSplineInterpolator csi(pointsPerUnit, skipPoints, useEndConditions, useMiddleConditions);
     csi.interpolatePath(inputpath, smoothedPath);
     initialPosePub.publish(smoothedPath.poses.front());
     finalPosePub.publish(smoothedPath.poses.back());
-    smoothedPathPub.publish(smoothedPath);
   }
   else
   {
     ROS_INFO_STREAM("Path does not have enough points");
   }
+  smoothedPathPub.publish(smoothedPath);
+
 }
 
 int main(int argc, char** argv)
