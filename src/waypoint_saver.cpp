@@ -35,3 +35,82 @@
 * Author:  Heath Ascott-Evans
 *********************************************************************/
 
+#include <ros/ros.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <std_srvs/Trigger.h>
+#include <fstream>
+// #include <
+// class tf_buffer{
+//     public:
+//         tf2_ros::Buffer tfBuffer;
+
+//         tf_buffer(){
+//         }
+// };
+
+// tf_buffer buff;
+
+
+bool save_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
+{
+    /*  look up TF base_link->map
+        write to file
+
+    */
+    geometry_msgs::PoseWithCovarianceStamped waypoint;
+    geometry_msgs::TransformStamped transformStamped;
+    tf2_ros::Buffer tfBuffer;
+    tf2_ros::TransformListener listener(tfBuffer);
+    // ros::Time time_now = ros::Time::now();
+        try
+        {
+            transformStamped= tfBuffer.lookupTransform("map","base_link",ros::Time(0),ros::Duration(3.0));
+            //wait for transform base_link to map
+            // listener.waitForTransform("base_link","map",time_now,ros::Duration(3.0));
+            // listener.transformPoint("map",)
+            waypoint.pose.pose.position.x=transformStamped.transform.translation.x;
+            waypoint.pose.pose.position.y=transformStamped.transform.translation.y;
+            waypoint.pose.pose.position.z=0;
+
+            res.success=true;
+            res.message="waypoint_saved x:" + std::to_string(waypoint.pose.pose.position.x) + " y:" + std::to_string(waypoint.pose.pose.position.y);
+            
+            //write to file 
+            std::ofstream file;
+            file.open("position.csv",std::ios::app);
+            file << waypoint.pose.pose.position.x << "," << waypoint.pose.pose.position.y <<"\n";
+            file.close();
+        }
+        catch (tf2::TransformException &ex)
+        {
+                    ROS_WARN("%s", ex.what());
+
+            res.success=false;
+            res.message="failed to save waypoint";
+        }
+    return true;
+}
+
+bool load_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
+{
+    /*  read waypoints.csv
+        iterate waypoints and publish to /input        
+    */
+    return true;
+}
+
+int main(int argc, char** argv)
+{
+    ros::init(argc,argv,"waypoint_saver");
+    ros::NodeHandle nh;
+
+    //services
+    ros::ServiceServer saver = nh.advertiseService("save_waypoint", &save_waypoint);
+    ros::ServiceServer loader = nh.advertiseService("load_waypoint", &load_waypoint);
+    // tf_buffer buffs;
+    ros::spin();
+    //publishers
+    return 0;
+}
