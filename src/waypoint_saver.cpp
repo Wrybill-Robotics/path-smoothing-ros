@@ -39,19 +39,13 @@
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <std_srvs/Trigger.h>
 #include <fstream>
-// #include <
-// class tf_buffer{
-//     public:
-//         tf2_ros::Buffer tfBuffer;
+#include <nav_msgs/Path.h>
 
-//         tf_buffer(){
-//         }
-// };
-
-// tf_buffer buff;
-
+//globals
+ros::Publisher pathPub;
 
 bool save_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
 {
@@ -73,6 +67,8 @@ bool save_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &
             waypoint.pose.pose.position.x=transformStamped.transform.translation.x;
             waypoint.pose.pose.position.y=transformStamped.transform.translation.y;
             waypoint.pose.pose.position.z=0;
+            waypoint.pose.pose.orientation=transformStamped.transform.rotation;
+
 
             res.success=true;
             res.message="waypoint_saved x:" + std::to_string(waypoint.pose.pose.position.x) + " y:" + std::to_string(waypoint.pose.pose.position.y);
@@ -80,7 +76,7 @@ bool save_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &
             //write to file 
             std::ofstream file;
             file.open("position.csv",std::ios::app);
-            file << waypoint.pose.pose.position.x << "," << waypoint.pose.pose.position.y <<"\n";
+            file << waypoint.pose.pose.position.x << "," << waypoint.pose.pose.position.y << "," << waypoint.pose.pose.orientation.x<< "," << waypoint.pose.pose.orientation.y<< "," << waypoint.pose.pose.orientation.z<< "," << waypoint.pose.pose.orientation.w<<"\n";
             file.close();
         }
         catch (tf2::TransformException &ex)
@@ -98,7 +94,59 @@ bool load_waypoint(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &
     /*  read waypoints.csv
         iterate waypoints and publish to /input        
     */
-    return true;
+    std::ifstream file("position.csv");
+        if (!file.is_open()) {
+            ROS_ERROR("Failed to open the CSV file");
+            res.success=false;
+            res.message="failed to open csv file";
+            return true;
+        }
+
+        std::string line;
+        nav_msgs::Path path;
+        path.header.frame_id = "map"; //use wp frame_id ?
+
+
+        while (std::getline(file, line)) {
+            std::istringstream iss(line);
+            std::string x_str, y_str,qx_str,qy_str,qz_str,qw_str;
+
+            // Parse the comma-separated values
+            if (std::getline(iss, x_str, ',') && std::getline(iss, y_str, ',') && std::getline(iss, qx_str, ',') && std::getline(iss, qy_str, ',') && std::getline(iss, qz_str, ',') && std::getline(iss, qw_str, ',')) {
+                // Convert the string values to doubles
+                double x, y,qx,qy,qz,qw;
+                try {
+                    x = std::stod(x_str);
+                    y = std::stod(y_str);
+                    qx = std::stod(qx_str);
+                    qy = std::stod(qy_str);
+                    qz = std::stod(qz_str);
+                    qw = std::stod(qw_str);
+
+                } catch (const std::exception& ex) {
+                    ROS_WARN_STREAM("Failed to parse values for line: " << line);
+                    continue;
+                }
+
+                // Create a PoseStamped message and populate it with the loaded point
+                geometry_msgs::PoseStamped poseStamped;
+                poseStamped.header.stamp = ros::Time::now();
+                poseStamped.header.frame_id = "map";
+                poseStamped.pose.position.x = x;
+                poseStamped.pose.position.y = y;
+                poseStamped.pose.orientation.x = qx;
+                poseStamped.pose.orientation.y = qy;
+                poseStamped.pose.orientation.z = qz;
+                poseStamped.pose.orientation.w = qw;
+
+                path.poses.push_back(poseStamped);
+            }
+        }
+        pathPub.publish(path);
+
+        res.success=true;
+        res.message="Points loaded";
+        return true;
 }
 
 int main(int argc, char** argv)
@@ -109,8 +157,12 @@ int main(int argc, char** argv)
     //services
     ros::ServiceServer saver = nh.advertiseService("save_waypoint", &save_waypoint);
     ros::ServiceServer loader = nh.advertiseService("load_waypoint", &load_waypoint);
-    // tf_buffer buffs;
-    ros::spin();
     //publishers
+    pathPub = nh.advertise<nav_msgs::Path>("initial_path", 1, true);
+
+
+    //spin
+    ros::spin();
+
     return 0;
 }

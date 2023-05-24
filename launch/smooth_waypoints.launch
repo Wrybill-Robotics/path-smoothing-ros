@@ -1,0 +1,26 @@
+<launch>
+
+  <!-- waypoints to simple path -->
+  <node name="waypoint_saver" pkg="waypoint_saver" type="waypoint_saver" output="screen">
+    <!-- pub -->
+    <remap from="/initial_path" to="/initial_path"/>
+
+  </node>
+  <!-- simple path to smooth path -->
+  <node name="path_smoother" pkg="path_smoothing_ros" type="path_smoother" output="screen">
+    <param name="points_per_unit" value="3"/>
+    <param name="skip_points" value="0"/>
+    <param name="use_end_conditions" value="true"/>
+    <param name="use_middle_conditions" value="true"/>
+    <!-- sub -->
+    <remap from="/initial_path" to="/initial_path"/>
+    <remap from="/initial_pose" to="/initial_pose"/>
+    <remap from="/final_pose" to="/final_pose"/>
+    <!-- pub -->   
+    <remap from="/smoothed_path" to="/smoothed_path"/>
+  </node>
+
+  <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/>
+
+
+</launch>
