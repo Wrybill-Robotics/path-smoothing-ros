@@ -3,8 +3,8 @@
 
     <!-- Interpolator -->
     <node name="interpolator" pkg="tracking_pid" type="path_interpolator">
-        <param name="target_x_vel" value="0.7"/>
-        <param name="target_x_acc" value="100.0"/>
+        <param name="target_x_vel" value="0.3"/>
+        <param name="target_x_acc" value="0.3.0"/>
                 <remap from="/path" to="/path_smoothing_demo/smoothed_path"/>
 
     </node>

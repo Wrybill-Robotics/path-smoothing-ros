@@ -8,7 +8,7 @@
   </node>
   <!-- simple path to smooth path -->
   <node name="path_smoother" pkg="path_smoothing_ros" type="path_smoother" output="screen">
-    <param name="points_per_unit" value="3"/>
+    <param name="points_per_unit" value="4"/>
     <param name="skip_points" value="0"/>
     <param name="use_end_conditions" value="true"/>
     <param name="use_middle_conditions" value="true"/>
@@ -20,7 +20,26 @@
     <remap from="/smoothed_path" to="/smoothed_path"/>
   </node>
 
-  <node name="demo_generator" pkg="path_smoothing_ros" type="demo_generator" output="screen"/>
 
+    <!-- Interpolator -->
+    <node name="interpolator" pkg="tracking_pid" type="path_interpolator">
+        <param name="target_x_vel" value="0.3"/>
+        <param name="target_x_acc" value="0.3"/>
+                <remap from="/path" to="/smoothed_path"/>
+
+    </node>
+
+    <!-- PID controller -->
+    <node name="controller" pkg="tracking_pid" type="controller" output="screen">
+      <remap from="move_base/cmd_vel" to="/cmd_vel"/>
+      <remap from="local_trajectory" to="trajectory"/>
+      <param name="controller_debug_enabled" value="True"/>
+      <param name="l" value="0.1"/>
+
+    </node>
+ 
+
+    <!-- test script -->
+    <test test-name="rostest_tracking_pid_node" pkg="tracking_pid" type="test_tracking_pid_system.py" />
 
 </launch>
