@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   tf2
   tf2_ros
+  tf
 )
 
 catkin_package(
@@ -33,6 +34,7 @@ add_executable(path_from_waypoints src/path_from_waypoints.cpp)
 add_executable(path_from_markers src/path_from_markers.cpp)
 add_executable(marker_demo src/marker_demo.cpp)
 add_executable(waypoint_saver src/waypoint_saver.cpp)
+add_executable(record_path src/record_path.cpp)
 
 
 target_link_libraries(demo ${PROJECT_NAME} ${catkin_LIBRARIES})
@@ -42,5 +44,6 @@ target_link_libraries(path_from_waypoints ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(path_from_markers ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(marker_demo ${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(waypoint_saver ${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(record_path ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
