@@ -61,9 +61,8 @@ class PathRecorder
 
         PathRecorder()  //default constructor
         {
-                ros::NodeHandle nh;    
-
-            distance_threshold=0.5;
+            ros::NodeHandle nh;    
+            nh.param<double>("minimum_distance" , distance_threshold, 0.5);
             is_recording=false;
             path_.header.frame_id="map";
             recorder= nh.advertiseService("record_path", &PathRecorder::record_srv,this);
