@@ -195,6 +195,7 @@ class PathRecorder
             res.message = "Path loaded and published";
             return true;
         }
+        
         bool clearCSVCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
         {
             // Open the CSV file in truncation mode (clearing the data)
