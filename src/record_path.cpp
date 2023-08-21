@@ -63,7 +63,9 @@ class PathRecorder
         {
             ros::NodeHandle nh;    
             nh.param<double>("minimum_distance" , distance_threshold, 0.5);
+            nh.param<std::string>("path_file",file_location_,"path.csv");
             is_recording=false;
+
             path_.header.frame_id="map";
             recorder= nh.advertiseService("record_path", &PathRecorder::record_srv,this);
             saver= nh.advertiseService("save_path", &PathRecorder::save_to_file,this);
@@ -102,6 +104,7 @@ class PathRecorder
             else
             {        
                 //stop recording
+                is_recording=req.data;
                 res.success=true;
                 res.message="stopped recording path";
             }
@@ -128,6 +131,7 @@ class PathRecorder
                 // Save the x, y, and yaw values to the CSV file
                 saveToCSV(x, y, yaw);
             }
+            ROS_INFO_STREAM("saved path to file: " << file_location_);
 
             tres.success = true;
             tres.message = "Path saved to CSV";
@@ -139,9 +143,9 @@ class PathRecorder
         {
             // Clear the existing path
             path_.poses.clear();
-
+            ROS_INFO_STREAM("opening file: " << file_location_);
             // Open the CSV file
-            std::ifstream file("path.csv");
+            std::ifstream file(file_location_);
             if (!file)
             {
             res.success = false;
@@ -199,7 +203,7 @@ class PathRecorder
         bool clearCSVCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
         {
             // Open the CSV file in truncation mode (clearing the data)
-            std::ofstream file("path.csv", std::ios::trunc);
+            std::ofstream file(file_location_, std::ios::trunc);
             if (!file)
             {
             res.success = false;
@@ -220,6 +224,7 @@ class PathRecorder
     ros::ServiceServer loader;
     ros::ServiceServer clearCSV;
     ros::Publisher pathPub_;
+    std::string file_location_;
     //look up pose in map
     geometry_msgs::PoseStamped grab_pose()
     {
@@ -295,7 +300,7 @@ class PathRecorder
       void saveToCSV(double x, double y, double yaw)
     {
         // Open the CSV file in append mode
-        std::ofstream file("path.csv", std::ios::app);
+        std::ofstream file(file_location_, std::ios::app);
 
         // Write the x, y, and yaw values to the CSV file
         file << x << "," << y << "," << yaw << std::endl;
@@ -322,7 +327,7 @@ int main(int argc, char** argv)
     //spin at rate
     while (ros::ok())
     {
-        if (path_recorder.is_recording);
+        if (path_recorder.is_recording)
         {
             path_recorder.record_path();
         }
