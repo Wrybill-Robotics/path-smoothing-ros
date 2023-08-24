@@ -64,6 +64,7 @@ class PathRecorder
             ros::NodeHandle nh;    
             nh.param<double>("minimum_distance" , distance_threshold, 0.5);
             nh.param<std::string>("path_file",file_location_,"path.csv");
+            ROS_INFO_STREAM("file path is: " <<file_location_);
             is_recording=false;
 
             path_.header.frame_id="map";
