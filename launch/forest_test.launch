@@ -5,7 +5,7 @@
 
     <node name="path_to_goals" pkg="path_smoothing_ros" type="path_to_goals" output="screen">
         <remap from="/path" to="/path"/>
-        <remap from="/waypoint_pose" to="/initialpose"/>
+        <remap from="/waypoint_pose" to="/waypoint_pose"/>
 
     </node>
     

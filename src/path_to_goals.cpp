@@ -58,19 +58,10 @@ public:
     // Create a publisher for the individual poses
     pose_publisher_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("waypoint_pose", 1);
 
-    processing_started_ = false;
   }
 
   bool startProcessingCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
   {
-    if (processing_started_)
-    {
-      res.success = false;
-      res.message = "Processing already started";
-      return true;
-    }
-
-    processing_started_ = true;
     res.success = true;
     res.message = "Processing started";
     geometry_msgs::PoseWithCovarianceStamped pose_cov;
