@@ -303,7 +303,7 @@ class PathRecorder
         std::ofstream file(file_location_, std::ios::app);
 
         // Write the x, y, and yaw values to the CSV file
-        file << x << "," << y << "," << yaw << std::endl;
+        file <<std::setprecision(15) << x << "," << y << "," << yaw << std::endl;
 
         // Close the CSV file
         file.close();
